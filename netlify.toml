@@ -1,0 +1,9 @@
+[build]
+  publish = "dist/hangman-angular"
+  command = "ng build --configuration=production"
+
+[[plugins]]
+  package = "@netlify/plugin-angular"
+  # Chặn tự động runtime plugin bằng cách disable auto detection
+  [plugins.inputs]
+    skipRuntimeInjection = true
