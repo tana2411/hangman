@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { Injectable,Inject,PLATFORM_ID  } from '@angular/core';
 
 @Injectable({
   providedIn: 'root'
@@ -27,7 +28,7 @@ private wordList = [
     },
     
 ];
-  constructor() { }
+  constructor(@Inject(PLATFORM_ID) private platformId: Object) {}
 
   getWords() {
     return this.wordList;
@@ -37,4 +38,8 @@ private wordList = [
     const index = Math.floor(Math.random() * this.wordList.length);
     return this.wordList[index];
   }
+
+
+
+
 }

@@ -3,7 +3,7 @@
     <img  [src]="'/img/over' + over + '.gif'" alt="gif">
     <h4>{{resultText}}</h4>
     <p>The correct word was: <b>{{ currentWord }}</b></p>
-    <button class="play-again" (click)="restart()">Play Again</button>
+    <button class="play-again"  (click)="restart()">Play Again</button>
   </div>
 </div>
 
@@ -40,4 +40,7 @@
 
 
   </div>
+  <div class="score-box">
+    <h4>Score: {{ score }}</h4>
+    <h4>Best Score: {{ bestScore }}</h4>
 </div>

@@ -1,3 +1,3 @@
 [build]
-  command = "npm run build"
-  publish = "dist/hangman-angular/browser"
+  command = "ng build"
+  publish = "dist/hangman-angular"
