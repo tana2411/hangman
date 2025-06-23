@@ -3,7 +3,7 @@
     <img  [src]="'/img/over' + over + '.gif'" alt="gif">
     <h4>{{resultText}}</h4>
     <p>The correct word was: <b>{{ currentWord }}</b></p>
-    <button class="play-again"  (click)="restart()">Play Again</button>
+    <button class="play-again"  (click)="restart()">{{play}}</button>
   </div>
 </div>
 

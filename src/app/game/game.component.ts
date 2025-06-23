@@ -24,7 +24,7 @@ export class GameComponent implements OnInit {
 correct: boolean = false;
 score: number = 0;
 bestScore: number = 0;
-
+play:string ='';
 
   constructor(private wordList: HangmanService) {
 
@@ -43,7 +43,7 @@ console.log(this.currentHint, 'Hint:', this.currentWord);
     const saveBest = localStorage.getItem('bestScore');
     this.bestScore = saveBest ? Number(saveBest) : 0;
   }
-  }
+  } 
 
   get WrongGuessesCount():number{
     return this.wrongLetters.length
@@ -74,6 +74,8 @@ console.log(this.currentHint, 'Hint:', this.currentWord);
     setTimeout(() => {
       this.isVisible = true;
       this.over = 2;
+            this.play = 'continue';
+
       this.resultText = 'Congratulations! You guessed the word!';
     }, 500);
   }
@@ -83,7 +85,10 @@ console.log(this.currentHint, 'Hint:', this.currentWord);
     setTimeout(() => {
       this.isVisible = true;
       this.over = 1;
+            this.play = 'Play Again';
+
       this.resultText = 'Game Over!';
+      this.score = 0; 
     }, 1000);
   }
 }
@@ -91,11 +96,11 @@ console.log(this.currentHint, 'Hint:', this.currentWord);
 
 
 restart(): void {
-  this.isVisible = false;        // Ẩn ảnh thắng/thua
-  this.over = 0;                 // Trạng thái game chưa kết thúc
-  this.wrongLetters = [];        // Xóa các phím sai
-  this.guessedLetters = [];      // Xóa các phím đã đoán
-  this.resultText = '';          // Xóa thông báo kết quả (nếu có)
+  this.isVisible = false;      
+  this.over = 0;                 
+  this.wrongLetters = [];        
+  this.guessedLetters = [];
+  this.resultText = '';         
   
 
   const wordObj = this.wordList.getRandomWord();
