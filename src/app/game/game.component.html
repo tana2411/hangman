@@ -1,3 +1,33 @@
+<!-- 
+<div class="auth-box">
+  <ng-container *ngIf="!authService.user; else loggedIn">
+    <button class="login-btn" (click)="authService.loginWithGoogle()">🔐 Đăng nhập với Google</button>
+  </ng-container>
+  
+  <ng-template #loggedIn>
+    <div class="user-info">
+      👋 Xin chào, <strong>{{ authService.getUserEmail() }}</strong>
+      <button class="logout-btn" (click)="authService.logout()">🚪 Đăng xuất</button>
+    </div>
+  </ng-template>
+</div>
+ -->
+
+
+
+<div class="leaderboard" *ngIf="topScores.length>0">
+<h3>Top Score</h3>
+<ol>
+  <li *ngFor="let entry of topScores">
+    {{ entry.email }}: {{ entry.score }}
+  </li>
+</ol>
+
+
+
+</div>
+
+
 <div class="game-modal" [ngStyle]="{ display: isVisible ? 'flex' : 'none' }">
   <div class="content">
     <img  [src]="'/img/over' + over + '.gif'" alt="gif">

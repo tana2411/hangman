@@ -1,8 +1,8 @@
 import { Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HangmanService } from '../hangman.service';
-import e from 'express';
-
+import { AuthServiceService } from '../auth-service.service'; // Import the AuthService
+import { ScoreEntry, ScoreService } from '../score.service'; // Import the ScoreService
 @Component({
   selector: 'app-game',
   standalone: true, // Add standalone configuration
@@ -14,19 +14,23 @@ export class GameComponent implements OnInit {
   currentWord: string = '';
   currentHint: string = '';
   letters: string[] = [];
-  guessedLetters: string[] = []; // Fixed naming
+  guessedLetters: string[] = []; 
   wrongLetters: string[] = [];
   maxWrong: number = 6;
   alphabet: string[] = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-  over: number = 0;
+  over: number = 0; 
    isVisible = false;
    resultText: string = '';
 correct: boolean = false;
 score: number = 0;
 bestScore: number = 0;
 play:string ='';
-
-  constructor(private wordList: HangmanService) {
+topScores: ScoreEntry[] = []; // Array to hold top scores
+  constructor(
+     public authService: AuthServiceService, 
+    private wordList: HangmanService,
+    private scoreService: ScoreService // Inject the ScoreService
+  ) {
 
   
 
@@ -43,6 +47,11 @@ console.log(this.currentHint, 'Hint:', this.currentWord);
     const saveBest = localStorage.getItem('bestScore');
     this.bestScore = saveBest ? Number(saveBest) : 0;
   }
+
+
+  // this.scoreService.getTopScores().subscribe((scores: ScoreEntry[]) => {
+  //   this.topScores = scores;
+  // })
   } 
 
   get WrongGuessesCount():number{
@@ -66,12 +75,17 @@ console.log(this.currentHint, 'Hint:', this.currentWord);
     this.correct = true;
     this.score += 10;
 
-    if (this.score > this.bestScore) {
+  //  const email =this.authService.getUserEmail();
+  //  if(email){
+  //   this.scoreService.saveScore(email, this.score)
+  //  }
+   if (this.score > this.bestScore) {
       this.bestScore = this.score;
       localStorage.setItem('bestScore', this.bestScore.toString());
     }
-
     setTimeout(() => {
+
+    
       this.isVisible = true;
       this.over = 2;
             this.play = 'continue';
@@ -117,13 +131,13 @@ handleKeyDown(event: KeyboardEvent) {
 
   if (key.length !== 1 || key < 'A' || key > 'Z') return;
 
-  // Nếu đã đoán rồi thì không làm gì nữa
+
   if (this.guessedLetters.includes(key) || this.wrongLetters.includes(key)) {
     console.log(`Phím "${key}" đã được đoán rồi!`);
     return;
   }
 
-  // ✅ Giao toàn bộ cho handleGuess
+
   this.handleGuess(key);
 }
 
