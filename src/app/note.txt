@@ -1,0 +1,3 @@
+tách wordlist thành 1 file riêng
+a:1|2|0 =0  
+khai báo type custom

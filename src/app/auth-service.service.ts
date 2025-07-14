@@ -5,22 +5,22 @@ import { Injectable } from '@angular/core';
   providedIn: 'root'
 })
 export class AuthServiceService {
-  // user: User | null = null;
+ private userName: string = '';
+  private userEmail: string = '';
 
-  // constructor(private auth: Auth) {
-  //   this.auth.onAuthStateChanged(u => this.user = u);
-  // }
+  setUserName(name: string) {
+    this.userName = name;
+  }
 
-  // loginWithGoogle() {
-  //   const provider = new GoogleAuthProvider();
-  //   return signInWithPopup(this.auth, provider);
-  // }
+  getUserName(): string {
+    return this.userName;
+  }
 
-  // logout() {
-  //   return signOut(this.auth);
-  // }
+  setUserEmail(email: string) {
+    this.userEmail = email;
+  }
 
-  // getUserEmail(): string | null {
-  //   return this.user?.email ?? null;
-  // }
+  getUserEmail(): string {
+    return this.userEmail;
+  }
 }

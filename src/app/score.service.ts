@@ -1,38 +1,35 @@
-import { Injectable, inject } from '@angular/core';
-// import {
-//   Firestore,
-//   collection,
-//   collectionData,
-//   addDoc,
-//   query,
-//   orderBy,
-//   limit
-// } from '@angular/fire/firestore';
+import { Injectable } from '@angular/core';
+import { Firestore, collection, addDoc, collectionData, query, orderBy, limit, Timestamp } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 
 export interface ScoreEntry {
   email: string;
+  name: string;
   score: number;
-  time: Date;
+  time: Timestamp;
 }
 
-@Injectable({ providedIn: 'root' })
+@Injectable({
+  providedIn: 'root'
+})
 export class ScoreService {
-  // private readonly firestore = inject(Firestore); // ✅ dùng inject()
+  constructor(private firestore: Firestore) {}
 
-  saveScore(email: string, score: number) {
-  //   const scoreRef = collection(this.firestore, 'scores');
-  //   return addDoc(scoreRef, {
-  //     email,
-  //     score,
-  //     time: new Date()
-  //   });
-  // }
+  saveScore(email: string, name: string, score: number, time: Date): Promise<void> {
+ const scoresCollection = collection(this.firestore, 'scores');
+    const scoreData: ScoreEntry = {
+      email: email,
+      name: name,
+      score: score,
+      time: Timestamp.fromDate(time)
+    };
+    return addDoc(scoresCollection, scoreData).then(() => {});
+  }
 
-  // getTopScores(): Observable<ScoreEntry[]> {
-  //   const scoresRef = collection(this.firestore, 'scores');
-  //   const q = query(scoresRef, orderBy('score', 'desc'), limit(5));
-  //   return collectionData(q, { idField: 'id' }) as Observable<ScoreEntry[]>;
-  // }
-}
+  getTopScores(limitCount: number = 10): Observable<ScoreEntry[]> {
+    const scoresCollection = collection(this.firestore, 'scores');
+    const topQuery = query(scoresCollection, orderBy('score', 'desc'), limit(limitCount));
+
+    return collectionData(topQuery, { idField: 'id' }) as Observable<ScoreEntry[]>;
+  }
 }

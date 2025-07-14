@@ -1,54 +1,31 @@
-<!-- 
-<div class="auth-box">
-  <ng-container *ngIf="!authService.user; else loggedIn">
-    <button class="login-btn" (click)="authService.loginWithGoogle()">🔐 Đăng nhập với Google</button>
-  </ng-container>
-  
-  <ng-template #loggedIn>
-    <div class="user-info">
-      👋 Xin chào, <strong>{{ authService.getUserEmail() }}</strong>
-      <button class="logout-btn" (click)="authService.logout()">🚪 Đăng xuất</button>
-    </div>
-  </ng-template>
-</div>
- -->
-
-
-
-<div class="leaderboard" *ngIf="topScores.length>0">
-<h3>Top Score</h3>
-<ol>
-  <li *ngFor="let entry of topScores">
-    {{ entry.email }}: {{ entry.score }}
-  </li>
-</ol>
-
-
-
+<div *ngIf="!isGameStarted">
+  <form>
+    <input [(ngModel)]="playerName" placeholder="Nhập tên của bạn" name="playerName">
+    <input [(ngModel)]="playerEmail" placeholder="Nhập email của bạn" name="playerEmail">
+    <button type="button" (click)="startGame()">Bắt đầu chơi</button>
+  </form>
 </div>
 
+<div *ngIf="isGameStarted">
 
 <div class="game-modal" [ngStyle]="{ display: isVisible ? 'flex' : 'none' }">
   <div class="content">
-    <img  [src]="'/img/over' + over + '.gif'" alt="gif">
-    <h4>{{resultText}}</h4>
+<img [src]="'/img/over' + (gameStatus$ | async) + '.gif'" alt="gif">
+    <h4>{{ resultText }}</h4>
     <p>The correct word was: <b>{{ currentWord }}</b></p>
-    <button class="play-again"  (click)="restart()">{{play}}</button>
+    <button class="play-again" (click)="restart()">{{ play }}</button>
   </div>
 </div>
 
-
-
-
 <div class="container">
   <div class="hangman-box">
-   <img [src]="'img/hangman-' + WrongGuessesCount + '.svg'" alt="Hangman Image">
+    <img [src]="'img/hangman-' + wrongGuessesCount + '.svg'" alt="Hangman Image">
   </div>
 
   <div class="game-box">
     <ul class="word-display">
-      <li [ngClass]="{'completed': correct}" *ngFor="let letter of letters">
-        {{ guessedLetters.includes(letter) ? letter : '_' }}
+      <li [ngClass]="{ 'completed': correct }" *ngFor="let letter of letters">
+        {{ (guessedLetter$ | async)?.includes(letter) ? letter : '_' }}
       </li>
     </ul>
 
@@ -57,20 +34,30 @@
     </h4>
 
     <h4 class="guesses-text">
-      Incorrect Guesses: <b>{{ WrongGuessesCount }} / {{ maxWrong }}</b>
+      Incorrect Guesses: <b>{{ wrongGuessesCount }} / 6</b>
     </h4>
 
     <div class="keyboard">
       <button *ngFor="let letter of alphabet"
-              [disabled]="guessedLetters.includes(letter) || wrongLetters.includes(letter)"
-              (click)="handleGuess(letter)">
+              [disabled]="(guessedLetter$ | async)?.includes(letter) || (wrongLetter$ | async)?.includes(letter)"
+              (click)="emitLetter(letter)">
         {{ letter }}
       </button>
     </div>
-
-
   </div>
+
   <div class="score-box">
     <h4>Score: {{ score }}</h4>
     <h4>Best Score: {{ bestScore }}</h4>
+  </div>
+</div>
+<div class="scoreboard">
+  <h3>🏆 Top 10 Người chơi có điểm cao nhất</h3>
+  <ul>
+    <li *ngFor="let score of topScores">
+      <span>{{ score.email }}</span>
+      <span>{{ score.score }} điểm</span>
+      <span>{{ score.time?.toDate() | date:'short' }}</span>
+    </li>
+  </ul>
 </div>

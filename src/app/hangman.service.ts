@@ -270,9 +270,7 @@ private wordList = [
 ];
   constructor(@Inject(PLATFORM_ID) private platformId: Object) {}
 
-  getWords() {
-    return this.wordList;
-  }
+  
 
   getRandomWord() {
     const index = Math.floor(Math.random() * this.wordList.length);

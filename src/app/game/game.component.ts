@@ -1,144 +1,180 @@
-import { Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
+import { Component, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HangmanService } from '../hangman.service';
-import { AuthServiceService } from '../auth-service.service'; // Import the AuthService
-import { ScoreEntry, ScoreService } from '../score.service'; // Import the ScoreService
+import { ScoreEntry, ScoreService } from '../score.service';
+import { BehaviorSubject, Subject } from 'rxjs';
+import { FormsModule } from '@angular/forms';
+
+type GameStatus = 0 | 1 | 2; 
+
 @Component({
   selector: 'app-game',
-  standalone: true, // Add standalone configuration
-  imports: [CommonModule],
+  standalone: true,
+  imports: [CommonModule, FormsModule],
   templateUrl: './game.component.html',
   styleUrl: './game.component.css'
 })
-export class GameComponent implements OnInit {
-  currentWord: string = '';
-  currentHint: string = '';
+export class GameComponent {
+  playerName: string = '';
+  playerEmail: string = '';
+  isGameStarted: boolean = false;
+
+  currentWord = '';
+  currentHint = '';
   letters: string[] = [];
-  guessedLetters: string[] = []; 
-  wrongLetters: string[] = [];
-  maxWrong: number = 6;
-  alphabet: string[] = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-  over: number = 0; 
-   isVisible = false;
-   resultText: string = '';
-correct: boolean = false;
-score: number = 0;
-bestScore: number = 0;
-play:string ='';
-topScores: ScoreEntry[] = []; // Array to hold top scores
+  alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+  private letter$ = new Subject<string>();
+  guessedLetter$ = new BehaviorSubject<string[]>([]);
+  wrongLetter$ = new BehaviorSubject<string[]>([]);
+  gameStatus$ = new BehaviorSubject<GameStatus>(0);
+
+  resultText = '';
+  isVisible = false;
+  correct = false;
+  score = 0;
+  bestScore = 0;
+  play = '';
+  topScores: ScoreEntry[] = [];
+
   constructor(
-     public authService: AuthServiceService, 
     private wordList: HangmanService,
-    private scoreService: ScoreService // Inject the ScoreService
-  ) {
+    private scoreService: ScoreService
+  ) {}
 
-  
-
+  startGame() {
+    if (this.playerName && this.playerEmail) {
+      this.isGameStarted = true;
+      this.loadBestScore();
+      this.newWord();
+      this.initSubscription();
+      this.loadTopScores();
+    } else {
+      alert('Vui lòng nhập tên và email trước khi bắt đầu!');
+    }
   }
 
-  ngOnInit(): void {
-const wordObj =this.wordList.getRandomWord();
-this.currentWord= wordObj.word.toUpperCase();
-this.currentHint = wordObj.hint;
-this.letters = this.currentWord.split('');
-console.log(this.currentHint, 'Hint:', this.currentWord);
-
- if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
-    const saveBest = localStorage.getItem('bestScore');
-    this.bestScore = saveBest ? Number(saveBest) : 0;
+  private loadTopScores() {
+    this.scoreService.getTopScores().subscribe(scores => {
+      this.topScores = scores;
+    });
   }
 
-
-  // this.scoreService.getTopScores().subscribe((scores: ScoreEntry[]) => {
-  //   this.topScores = scores;
-  // })
-  } 
-
-  get WrongGuessesCount():number{
-    return this.wrongLetters.length
+  private isBrowser(): boolean {
+    return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
   }
 
-
-
-
-  handleGuess(letter: string): void {
-  if (this.letters.includes(letter)) {
-    this.guessedLetters.push(letter);
-    console.log(`Phím "${letter}" nằm trong từ cần đoán!`);
-  } else {
-    this.wrongLetters.push(letter);
-    console.log(`Phím "${letter}" không nằm trong từ.`);
+  private loadBestScore() {
+    if (this.isBrowser()) {
+      const saveBest = localStorage.getItem('bestScore');
+      this.bestScore = saveBest ? Number(saveBest) : 0;
+    }
   }
 
-  const hasWon = this.letters.every(l => this.guessedLetters.includes(l));
-  if (hasWon) {
+  private newWord() {
+    const wordObj = this.wordList.getRandomWord();
+    this.currentWord = wordObj.word.toUpperCase();
+    this.currentHint = wordObj.hint;
+    this.letters = this.currentWord.split('');
+    this.guessedLetter$.next([]);
+    this.wrongLetter$.next([]);
+    this.gameStatus$.next(0);
+    this.isVisible = false;
+    this.resultText = '';
+    console.log(this.currentWord)
+  }
+
+  public emitLetter(letter: string) {
+    this.letter$.next(letter.toUpperCase());
+  }
+
+  private initSubscription() {
+    this.letter$.subscribe((letter) => {
+      const guessed = this.guessedLetter$.value.includes(letter);
+      const wrong = this.wrongLetter$.value.includes(letter);
+      if (guessed || wrong) return;
+
+      if (this.letters.includes(letter)) {
+        this.guessedLetter$.next([...this.guessedLetter$.value, letter]);
+      } else {
+        this.wrongLetter$.next([...this.wrongLetter$.value, letter]);
+      }
+
+      const hasWon = this.letters.every(l => this.guessedLetter$.value.includes(l));
+      if (hasWon) {
+        this.gameStatus$.next(2);
+      } else if (this.wrongLetter$.value.length >= 6) {
+        this.gameStatus$.next(1);
+      }
+    });
+
+    this.gameStatus$.subscribe((status) => {
+      if (status === 2) {
+        this.handleWin();
+      } else if (status === 1) {
+        this.handleLose();
+      }
+    });
+  }
+
+  private handleWin() {
     this.correct = true;
     this.score += 10;
 
-  //  const email =this.authService.getUserEmail();
-  //  if(email){
-  //   this.scoreService.saveScore(email, this.score)
-  //  }
-   if (this.score > this.bestScore) {
+    if (this.score > this.bestScore) {
       this.bestScore = this.score;
       localStorage.setItem('bestScore', this.bestScore.toString());
     }
+
     setTimeout(() => {
-
-    
       this.isVisible = true;
-      this.over = 2;
-            this.play = 'continue';
-
-      this.resultText = 'Congratulations! You guessed the word!';
+      this.resultText = '🎉 You Win';
+      this.play = 'Continute';
     }, 500);
   }
 
-  if (this.wrongLetters.length >= this.maxWrong) {
+  private handleLose() {
     this.correct = false;
+
+    // Kiểm tra nếu điểm cao hơn người cuối top 10
+    if (this.topScores.length < 10 || this.score > this.topScores[this.topScores.length - 1].score) {
+      this.savePlayerScore();
+    }
+
     setTimeout(() => {
       this.isVisible = true;
-      this.over = 1;
-            this.play = 'Play Again';
-
-      this.resultText = 'Game Over!';
-      this.score = 0; 
+      this.resultText = '💀 Game Over!';
+      this.play = 'Play Again';
+      this.score = 0;
     }, 1000);
   }
-}
 
-
-
-restart(): void {
-  this.isVisible = false;      
-  this.over = 0;                 
-  this.wrongLetters = [];        
-  this.guessedLetters = [];
-  this.resultText = '';         
-  
-
-  const wordObj = this.wordList.getRandomWord();
-  this.currentWord = wordObj.word.toUpperCase();
-  this.currentHint = wordObj.hint;
-  this.letters = this.currentWord.split('');
-
-  console.log(this.currentHint, 'Hint:', this.currentWord);
-}
-
-@HostListener('window:keydown', ['$event'])
-handleKeyDown(event: KeyboardEvent) {
-  const key = event.key.toUpperCase();
-
-  if (key.length !== 1 || key < 'A' || key > 'Z') return;
-
-
-  if (this.guessedLetters.includes(key) || this.wrongLetters.includes(key)) {
-    console.log(`Phím "${key}" đã được đoán rồi!`);
-    return;
+  private savePlayerScore() {
+    if (this.playerName && this.playerEmail) {
+      this.scoreService.saveScore(this.playerEmail, this.playerName, this.score, new Date())
+        .then(() => {
+          console.log('Score saved');
+          this.loadTopScores();
+        })
+        .catch(error => console.error('Error saving score:', error));
+    }
   }
 
+  get wrongGuessesCount(): number {
+    return this.wrongLetter$.value.length;
+  }
 
-  this.handleGuess(key);
-}
+  @HostListener('window:keydown', ['$event'])
+  handleKeyDown(event: KeyboardEvent) {
+    if (!this.isGameStarted) return;
 
+    const key = event.key.toUpperCase();
+    if (key.length === 1 && key >= 'A' && key <= 'Z') {
+      this.letter$.next(key);
+    }
+  }
+
+  restart(): void {
+    this.newWord();
+  }
 }
