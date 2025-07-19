@@ -2,8 +2,9 @@ import { Component, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HangmanService } from '../hangman.service';
 import { ScoreEntry, ScoreService } from '../score.service';
-import { BehaviorSubject, Subject } from 'rxjs';
+import { BehaviorSubject, Subject, Subscription } from 'rxjs';
 import { FormsModule } from '@angular/forms';
+import { AuthServiceService } from '../auth-service.service';
 
 type GameStatus = 0 | 1 | 2; 
 
@@ -37,9 +38,15 @@ export class GameComponent {
   play = '';
   topScores: ScoreEntry[] = [];
 
+
+
+  private letterSub?: Subscription;
+  private statusSub?: Subscription;
+
   constructor(
     private wordList: HangmanService,
-    private scoreService: ScoreService
+    private scoreService: ScoreService,
+    private authService: AuthServiceService
   ) {}
 
   startGame() {
@@ -89,7 +96,7 @@ export class GameComponent {
   }
 
   private initSubscription() {
-    this.letter$.subscribe((letter) => {
+    this.letterSub =this.letter$.subscribe((letter) => {
       const guessed = this.guessedLetter$.value.includes(letter);
       const wrong = this.wrongLetter$.value.includes(letter);
       if (guessed || wrong) return;
@@ -108,13 +115,19 @@ export class GameComponent {
       }
     });
 
-    this.gameStatus$.subscribe((status) => {
+    this.statusSub = this.gameStatus$.subscribe((status) => {
       if (status === 2) {
         this.handleWin();
       } else if (status === 1) {
         this.handleLose();
       }
     });
+    this.gameStatus$.unsubscribe();
+    this.guessedLetter$.unsubscribe();
+  }
+  ngOnDestroy() {
+    this.letterSub?.unsubscribe();
+    this.statusSub?.unsubscribe();
   }
 
   private handleWin() {
@@ -136,7 +149,7 @@ export class GameComponent {
   private handleLose() {
     this.correct = false;
 
-    // Kiểm tra nếu điểm cao hơn người cuối top 10
+ 
     if (this.topScores.length < 10 || this.score > this.topScores[this.topScores.length - 1].score) {
       this.savePlayerScore();
     }
@@ -177,4 +190,15 @@ export class GameComponent {
   restart(): void {
     this.newWord();
   }
+
+  async loginGoogle(){
+    const user = await this.authService.signInWithGoogle()
+    if(user)
+    {
+      this.playerName = user.displayName || '';
+      this.playerEmail = user.email || '';
+      this.startGame();
+    }
+  }
 }
+//eventloop, bat dong bo, devtool(debbugger)

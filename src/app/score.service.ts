@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Firestore, collection, addDoc, collectionData, query, orderBy, limit, Timestamp } from '@angular/fire/firestore';
+import { Firestore, collection, collectionData, query, orderBy, limit, Timestamp, doc, getDoc, setDoc } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 
 export interface ScoreEntry {
@@ -15,15 +15,33 @@ export interface ScoreEntry {
 export class ScoreService {
   constructor(private firestore: Firestore) {}
 
-  saveScore(email: string, name: string, score: number, time: Date): Promise<void> {
- const scoresCollection = collection(this.firestore, 'scores');
-    const scoreData: ScoreEntry = {
-      email: email,
-      name: name,
-      score: score,
-      time: Timestamp.fromDate(time)
-    };
-    return addDoc(scoresCollection, scoreData).then(() => {});
+  async saveScore(email: string, name: string, newScore: number, time: Date): Promise<void> {
+    const userScoreRef = doc(this.firestore, 'scores', email);
+    const docSnap = await getDoc(userScoreRef);
+
+    if (docSnap.exists()) {
+      const existingData = docSnap.data() as ScoreEntry;
+
+      if (newScore > existingData.score) {
+        console.log(`Updating score from ${existingData.score} to ${newScore}`);
+        await setDoc(userScoreRef, {
+          email,
+          name,
+          score: newScore,
+          time: Timestamp.fromDate(time)
+        }, { merge: true });
+      } else {
+        console.log(`New score ${newScore} is not higher than existing score ${existingData.score}. No update made.`);
+      }
+    } else {
+      console.log('No existing score. Creating new record.');
+      await setDoc(userScoreRef, {
+        email,
+        name,
+        score: newScore,
+        time: Timestamp.fromDate(time)
+      });
+    }
   }
 
   getTopScores(limitCount: number = 10): Observable<ScoreEntry[]> {
