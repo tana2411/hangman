@@ -1,3 +1,10 @@
+
+<div *ngIf="playerName && playerEmail">
+  <h3>Welcome, {{ playerName }}</h3>
+  <p>Email: {{ playerEmail }}</p>
+  <p>Best Score: {{ bestScore }}</p>
+</div>
+
 <div *ngIf="!isGameStarted">
   <form>
     <input [(ngModel)]="playerName" placeholder="Nhập tên của bạn" name="playerName">
