@@ -1,10 +1,38 @@
 
-<div *ngIf="playerName && playerEmail">
-  <h3>Welcome, {{ playerName }}</h3>
-  <p>Email: {{ playerEmail }}</p>
-  <p>Best Score: {{ bestScore }}</p>
+<div class="avatar" *ngIf="playerName && playerEmail">
+  <div class="avatar-wrapper" [class.active]="menuOpen$ | async">
+    <div class="avatar-image">
+      <img [src]="avatarUrl" alt="Avatar" (click)="openMenu()">
+    </div>
+
+    <div class="menu" *ngIf="menuOpen$ | async">
+      <h3>Profile</h3>
+      <p> {{ playerName }} </p>
+      <p> {{ playerEmail }}</p>
+      <p>Best Score:{{bestScore}} pts</p>
+
+      <div class="setting">
+        <h3>Setting</h3 >
+              <div *ngIf="isEditingName">
+  <input [(ngModel)]="tempName" placeholder="New Name">
+<div class="setting-btn">  <button (click)="saveName()">Save</button>
+  <button (click)="cancelEdit()">Cancel</button></div>
+
 </div>
 
+
+  <p (click)="enableEdit()">Change Name</p>
+
+          <p (click)="changeAvatar()" >Change Avatar</p>
+
+          <p (click)="logOut()" >Log out</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<h1>HANGMAN GAME</h1>
 <div *ngIf="!isGameStarted">
   <form>
     <input [(ngModel)]="playerName" placeholder="Nhập tên của bạn" name="playerName">
@@ -51,7 +79,7 @@
 
     <div class="keyboard">
       <button *ngFor="let letter of alphabet"
-              [disabled]="(guessedLetter$ | async)?.includes(letter) || (wrongLetter$ | async)?.includes(letter)"
+              [disabled]="isEditingName||(guessedLetter$ | async)?.includes(letter) || (wrongLetter$ | async)?.includes(letter)"
               (click)="emitLetter(letter)">
         {{ letter }}
       </button>
@@ -73,3 +101,5 @@
     </li>
   </ul>
 </div>
+
+

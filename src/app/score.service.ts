@@ -66,3 +66,4 @@ private async updateScoreData(uid: string, email: string, name: string, score: n
     return collectionData(topQuery, { idField: 'id' }) as Observable<ScoreEntry[]>;
   }
 }
+//redesign ,

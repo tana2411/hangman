@@ -2,7 +2,7 @@
   import { CommonModule } from '@angular/common';
   import { HangmanService } from '../hangman.service';
   import { ScoreEntry, ScoreService } from '../score.service';
-  import { BehaviorSubject, Subject, Subscription } from 'rxjs';
+  import { BehaviorSubject, from, fromEvent, Subject, Subscription } from 'rxjs';
   import { FormsModule } from '@angular/forms';
   import { AuthServiceService } from '../auth-service.service';
 
@@ -18,6 +18,7 @@
   export class GameComponent {
     playerName: string = '';
     playerEmail: string = '';
+    avatarUrl: string = ''; // Default avatar URL
     isGameStarted: boolean = false;
 
     currentWord = '';
@@ -29,7 +30,7 @@
     guessedLetter$ = new BehaviorSubject<string[]>([]);
     wrongLetter$ = new BehaviorSubject<string[]>([]);
     gameStatus$ = new BehaviorSubject<GameStatus>(0);
-
+    menuOpen$=new BehaviorSubject<boolean>(false);
     resultText = '';
     isVisible = false;
     correct = false;
@@ -37,6 +38,9 @@
     bestScore = 0;
     play = '';
     topScores: ScoreEntry[] = [];
+
+    isEditingName = false;
+    tempName = '';
 
 
 
@@ -47,7 +51,8 @@
       private wordList: HangmanService,
       private scoreService: ScoreService,
       private authService: AuthServiceService
-    ) {}
+    ) {        this.loadTopScores();
+}
 
     startGame() {
       if (this.playerName && this.playerEmail) {
@@ -55,7 +60,6 @@
     
         this.newWord();
         this.initSubscription();
-        this.loadTopScores();
       } else {
         alert('Vui lòng nhập tên và email trước khi bắt đầu!');
       }
@@ -180,7 +184,7 @@ private savePlayerScore() {
     @HostListener('window:keydown', ['$event'])
     handleKeyDown(event: KeyboardEvent) {
       if (!this.isGameStarted) return;
-
+      if (this.isEditingName) return;
       const key = event.key.toUpperCase();
       if (key.length === 1 && key >= 'A' && key <= 'Z') {
         this.letter$.next(key);
@@ -191,26 +195,104 @@ private savePlayerScore() {
       this.newWord();
     }
 
-  async loginGoogle() {
-    const user = await this.authService.signInWithGoogle();
-    if (user) {
+async loginGoogle() {
+  const user = await this.authService.signInWithGoogle();
+  if (user) {
+    this.playerEmail = user.email || '';
+    this.avatarUrl = user.photoURL ?? '';
+    console.log('User logged in:', user);
+
+    const profile = await this.authService.getUserProfile(user.uid);
+    if (profile) {
+      console.log('Loaded profile from Firestore:', profile);
+      this.playerName = profile.name || user.displayName || '';
+      this.bestScore = profile.score;
+      console.log('bestScore after loading profile:', this.bestScore);
+    } else {
       this.playerName = user.displayName || '';
-      this.playerEmail = user.email || '';
-
-    console.log('User:', this.authService.user);
-console.log('Current User:', this.authService.currentUser);
-      console.log('Reset bestScore:', this.bestScore);
-      const profile = await this.authService.getUserProfile(user.uid);
-      if (profile) {
-        console.log('Loaded profile from Firestore:', profile);
-        this.bestScore = profile.score;
-        console.log('bestScore after loading profile:', this.bestScore);
-      }
-
-      this.startGame();
     }
+
+    this.startGame();
+  }
+}
+
+
+
+  openMenu() {
+    this.menuOpen$.next(!this.menuOpen$.value);
   }
 
 
+ changeName() {
+  const uid = this.authService.user?.uid ?? this.authService.currentUser?.uid;
+  if (!uid) {
+    console.error('UID is missing, cannot update name.');
+    return;
+  }
+
+  const newName = prompt('Enter your name:', this.playerName);
+  if (newName) {
+    this.playerName = newName;
+    console.log('Updating name for UID1:', uid);
+    this.authService.updateName(uid, this.playerName)
+
+      .then(() => {
+        console.log('Name updated successfully');
+        console.log('Updating name for UID2:', uid);
+      })
+      .catch(error => console.error('Error updating name:', error));
+  }
+}
+
+
+enableEdit() {
+  this.isEditingName = true;
+  this.tempName = this.playerName;
+}
+
+cancelEdit() {
+  this.isEditingName = false;
+}
+
+saveName() {
+  const uid = this.authService.user?.uid ?? this.authService.currentUser?.uid;
+  if (!uid || !this.tempName.trim()) {
+    console.error('UID missing or name empty');
+    return;
+  }
+
+  this.authService.updateName(uid, this.tempName)
+    .then(() => {
+      this.playerName = this.tempName;
+      this.isEditingName = false;
+      console.log('Name updated successfully');
+    })
+    .catch(error => console.error('Error updating name:', error));
+}
+
+  changeAvatar(){
+
+    
+
+    
+  }
+
+  logOut() {
+   
+    this.authService.logout().then(() => {
+      console.log('User logged out');
+      this.isGameStarted = false;
+      this.playerName = '';
+      this.playerEmail = '';
+      this.avatarUrl = '';
+      this.score = 0;
+      this.bestScore = 0;
+      this.guessedLetter$.next([]);
+      this.wrongLetter$.next([]);
+      this.gameStatus$.next(0);
+    }).catch(error => {
+      console.error('Error during logout:', error);
+    });
+  }
   }
   //eventloop, bat dong bo, devtool(debbugger)
